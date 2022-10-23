@@ -1,0 +1,13 @@
+#########################################################################################################################################################################
+##### Look at the length and coverage of the original scaffolds/contigs.fasta files, exclude contigs smaller than 500 bp: #####
+cat file.fasta | grep "^>NODE_" | sed 's/_/ /g' | awk '{if($4>500)print $5,$6,$1,$2,$3,$4}'| sort -k 2 -rg | head -50
+
+#########################################################################################################################################################################
+##### Look at every plot, select a coverage between 100 and 5000 bp length #####
+
+#########################################################################################################################################################################
+##### Extract the mitochondrial genome based on length and coverage from the whole scafolds/contigs file: #####
+cat file.fas | grep "^>NODE_" | sed 's/_/ /g' | awk '{if($6>125)print $5,$6,$1,$2,$3,$4}'		
+
+
+
