@@ -19,5 +19,10 @@ for num in {1..100}; do blastn -db reference_DB -query ”$num”_scaffolds.fast
 for num in {1..100}; do touch "$num"_results.txt; cat "$num"_results.out | grep "^NODE_" | sort -k 1.6,1.12 -g > "$num"_results.txt; done
 
 #########################################################################################################################################################################
-##### Make graphs in R to see what is mitochondrial genome with the whole sequences and the BLASTed stuff #####
+##### Make graphs in R to see what is mitochondrial genome with the whole sequences and the BLASTed stuff --> .... #####
+
+#########################################################################################################################################################################
+##### BLAST the resulting .fasta files against nt on acharius #####
+
+
 
