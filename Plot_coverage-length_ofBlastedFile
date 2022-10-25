@@ -1,0 +1,32 @@
+library(ape)
+#
+#install.packages("ape")
+#
+#
+for (i in c("X1","X2","Y1","Y2","Y3"))
+{
+  ### 1. read genome
+  genome<-read.dna(paste("/path/to/file/",i,"scaffolds.fasta",sep=""),format="fasta")
+  
+  ### 2. read blasted subset of contigs (after blasting it, in .out format)
+  subset<-read.table(paste("/path/to/file/",i,"_results.out",sep=""),header=FALSE)
+  
+  ### 3. Select and write contigs
+  foo<-genome[levels(subset$V1)]
+  foo<-foo[order(sapply(foo,length),decreasing=TRUE)]
+  write.dna(foo,paste("/path/to/results/",i,"_mitoc.fas",sep=""),format="fasta",colsep="",nbcol=-1)
+}
+
+### make pdfs("~/Cerodens-Mito/BLAST/MITOS/subset_plot.pdf")
+for (i in c("X1","X2","Y1","Y2","Y3"))
+{
+  subset<-read.table(paste("/path/to/file/",i,"_results.out",sep=""),header=FALSE)
+  subset<-cbind(subset,
+                len=as.numeric(sapply(strsplit(as.character(subset$V1),"_"),`[`,4)),
+                cov=as.numeric(sapply(strsplit(as.character(subset$V1),"_"),`[`,6)))
+  print(qplot(len, cov, data = subset, size = V12, col=V12,main=i))
+  print(qplot(V8-V7, cov, data = subset, size = V12, col=V12,main=i))
+}
+dev.off()
+
+foo[names(foo)%in%subset[subset$cov>250&(subset$V8-subset$V7)>2000,1]]
