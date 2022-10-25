@@ -1,0 +1,106 @@
+library(ggplot2)
+
+######### read data from CSV file
+l = NULL
+file = NULL
+file <- "/home/eva/R/Zusammenfassung20_final_.csv"
+l <- read.csv(file, header = TRUE, sep=";", fill = TRUE, na.strings = TRUE, stringsAsFactors = FALSE)
+
+###########################################
+######### Variablen #######################
+###########################################
+
+######### get data from .csv
+PCGIntron <- l$Introns.in.PCGs
+PCG <- l$PCG.Rest
+RestIntron <- l$Introns.not.in.PCGs
+RestGenome <- l$Genome.Rest
+Species <- l$Species
+GC <- l$Gcontent
+Ges <- l$GenomeSize
+Dpo <- l$dpo
+
+PCGIntron
+######### Kategorien (die Legende (4 versschiedenen Teile des Genoms) immer wieder hintereinander geschrieben)
+Category  <- c(rep(c("PCG", "PCGIntron", "RestIntron", "RestGenome"), times = 23))
+Category
+######### GenomeSize: Zusammenfassung aller Werte in einer Variable GenomeSize
+GenomeSize = NULL
+for(i in 1:23)
+{
+  new_value <- c(PCG[i], PCGIntron[i], RestIntron[i], RestGenome[i]) 
+  GenomeSize <- c(GenomeSize, new_value)
+}
+GenomeSize
+######### GC: Werte je 4 mal für jede Kategorie wiederholt
+GC1 = NULL
+for(i in 1:23)
+{
+  new_value <- c(GC[i], GC[i], GC[i], GC[i]) 
+  GC1 <- c(GC1, new_value)
+}
+str(GC1)
+######### Species: die Namen der Species 4 Mal (4 = Anzahl Kategorie) wiederholt
+Spec = NULL
+Spec <- rep(Species, each = 4)
+
+######### Gesamte Genomlänge 4 Mal wiederholt in Ges gespeichert
+Ges <- rep(Ges, each = 4)
+
+######### dpo size 4 Mal wiederholen
+Dpo <- rep(Dpo, each = 4)
+str(Dpo)
+
+###########################################
+######### Data Frame & Workarounds ########
+###########################################
+
+######### Zusammenfassen der Daten in Dataframe Data
+Data = NULL
+Data <- data.frame(Spec, Category, GenomeSize, GC1, Ges, Dpo, stringsAsFactors = FALSE)
+str(Data)
+######### Workaround to get a orderd x axis: Replicate original data, convert into factor & change order manually
+data1 <- Data   
+data1$Spec <- factor(data1$Spec)  
+data1$Spec <- factor(data1$Spec, levels = c(levels = c("X01 erodens", "X03 variabilis", "Y02 variabilis", "Y03 variabilis", "Y04 variabilis", "Y05 variabilis", "Y06 variabilis", "Y14 variabilis", "X04 chalybaea", "X08 chalybaea", "Y01 chalybaea", "Y10 chalybaea", "X07 alociza", "Y07 alociza", "Y09 alociza", "Y11 alociza", "Y12 alociza", "X06 albopruinosa", "Y13 albopruinosa", "X02 transcaspica", "X05 micromontana", "X09 sp",  "Y08 sp")))
+  
+######### Workaround to get orderd stagged (categorry): convert into factor & change order manually
+data1$Category <- factor(data1$Category)   
+data1$Category <- factor(data1$Category, 
+                     levels = c("RestGenome", "RestIntron", "PCGIntron", "PCG"))
+str(data1)
+
+###########################################
+######### PLOT  genome size & dpo  ########
+###########################################
+ggplot(data= data2, mapping = aes(x = Species))  + 
+  geom_col(mapping = aes(y = Ges), color = "gray", fill = "#ffffff") +
+  #geom_line(mapping = aes(y = Dpo * 20, group = 2), colour = "red", size = 1.5) +
+  geom_line(mapping = aes(y = Dpo * 20, group = 2), colour = "red", size = 1.5) +
+  scale_y_continuous(
+    name = "Basepairs (bp)",
+    sec.axis = sec_axis(
+      trans = ~ . /20000,
+      name = "size of dpo [kbp]"))+
+  # Achsenbeschriftungen
+  labs(
+    #x = "Species",
+    title = "Size of mitochondrial genomes & dpo genes"
+  ) +
+  theme(
+    plot.title = element_text(color = "#000000", size = 14, hjust = 0.5, face = "bold"),
+    #plot.subtitle = element_text(hjust = 0.5, size = 12),
+    plot.caption = element_text(hjust = 1),
+    axis.title.x = element_text(color = "#000000", size = 10, face = "bold"),
+    axis.title.y = element_text(size = 10, face = "bold"),
+    legend.title = element_blank(), 
+    legend.position = "bottom"
+  ) +
+  geom_text(aes(label = round(Ges / 1000, digits = 0), 
+                y = Ges + 1), size = 3, color = "black") +
+  scale_x_discrete(guide = guide_axis(angle = 45)) 
+citation()
+citation("ggplot2")
+citation("ape")
+library(help = ape)
+packageVersion("ape")
