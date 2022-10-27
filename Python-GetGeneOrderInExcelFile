@@ -1,0 +1,270 @@
+### Get the gene order in an Excel file
+### Output = orderd list of 17 defined genes (proteine) & an ordered list of other genes found in the samples 
+### (color, style, ... based on Pogoda et al. 2018)
+
+import glob
+from pathlib import Path
+import csv
+import xlsxwriter
+
+### Create Excel workbook:
+#workbook = xlsxwriter.Workbook('proteins-Gesamt.xlsx')
+workbook = xlsxwriter.Workbook('proteins.xlsx')
+
+### add a new worksheets via add_worksheet() method:
+worksheet = workbook.add_worksheet('Ordered Proteins') 
+worksheet2 = workbook.add_worksheet('Other Proteins')
+
+### define styles (bold & conditional formating)
+bold = workbook.add_format({'bold': True})
+
+### define all background colours (conditional format / bedingte Formatierung)
+cox1 = workbook.add_format()
+cox1.set_bg_color('gray')
+worksheet.conditional_format('A1:V100', 
+                                {'type':'cell', 
+                                 'criteria':'==',
+                                 'value':'"cox1"', 
+                                 'format': cox1})
+cox2 = workbook.add_format()
+cox2.set_bg_color('#CECCCD')
+worksheet.conditional_format('A1:V100', 
+                                {'type':'cell', 
+                                 'criteria':'==',
+                                 'value':'"cox2"', 
+                                 'format': cox2})
+cox3 = workbook.add_format()
+cox3.set_bg_color('#F4B184')
+worksheet.conditional_format('A1:V100', 
+                                {'type':'cell', 
+                                 'criteria':'==',
+                                 'value':'"cox3"', 
+                                 'format': cox3})
+cob = workbook.add_format()
+cob.set_bg_color('9AC1E6')
+worksheet.conditional_format('A1:V100', 
+                                {'type':'cell', 
+                                 'criteria':'==',
+                                 'value':'"cob"', 
+                                 'format': cob})
+nad1 = workbook.add_format()
+nad1.set_bg_color('purple')
+worksheet.conditional_format('A1:V100', 
+                                {'type':'cell', 
+                                 'criteria':'==',
+                                 'value':'"nad1"', 
+                                 'format': nad1})
+nad2 = workbook.add_format()
+nad2.set_bg_color('#FFC000')
+worksheet.conditional_format('A1:V100', 
+                                {'type':'cell', 
+                                 'criteria':'==',
+                                 'value':'"nad2"', 
+                                 'format': nad2})
+nad3 = workbook.add_format()
+nad3.set_bg_color('pink')
+worksheet.conditional_format('A1:V100', 
+                                {'type':'cell', 
+                                 'criteria':'==',
+                                 'value':'"nad3"', 
+                                 'format': nad3})
+nad4 = workbook.add_format()
+nad4.set_bg_color('#307ABB')
+worksheet.conditional_format('A1:V100', 
+                                {'type':'cell', 
+                                 'criteria':'==',
+                                 'value':'"nad4"', 
+                                 'format': nad4})
+nad4l = workbook.add_format()
+nad4l.set_bg_color('#425367')
+worksheet.conditional_format('A1:V100', 
+                                {'type':'cell', 
+                                 'criteria':'==',
+                                 'value':'"nad4l"', 
+                                 'format': nad4l})
+nad4L = workbook.add_format()
+nad4L.set_bg_color('#425367')
+worksheet.conditional_format('A1:V100', 
+                                {'type':'cell', 
+                                 'criteria':'==',
+                                 'value':'"nad4L"', 
+                                 'format': nad4L})
+nad5 = workbook.add_format()
+nad5.set_bg_color('#00CBFE')
+worksheet.conditional_format('A1:V100', 
+                                {'type':'cell', 
+                                 'criteria':'==',
+                                 'value':'"nad5"', 
+                                 'format': nad5})
+nad6 = workbook.add_format()
+nad6.set_bg_color('#528035')
+worksheet.conditional_format('A1:V100', 
+                                {'type':'cell', 
+                                 'criteria':'==',
+                                 'value':'"nad6"', 
+                                 'format': nad6})
+SSU = workbook.add_format()
+SSU.set_bg_color('#F20300')
+worksheet.conditional_format('A1:V100', 
+                                {'type':'cell', 
+                                 'criteria':'==',
+                                 'value':'"rrnS"', 
+                                 'format': SSU})
+LSU = workbook.add_format()
+LSU.set_bg_color('#C00000')
+worksheet.conditional_format('A1:V100', 
+                                {'type':'cell', 
+                                 'criteria':'==',
+                                 'value':'"rrnL"', 
+                                 'format': LSU})
+rps3 = workbook.add_format()
+rps3.set_bg_color('#BD8F00')
+worksheet.conditional_format('A1:V100', 
+                                {'type':'cell', 
+                                 'criteria':'==',
+                                 'value':'"rps3"', 
+                                 'format': rps3})
+atp6 = workbook.add_format()
+atp6.set_bg_color('#00B14D')
+worksheet.conditional_format('A1:V100', 
+                                {'type':'cell', 
+                                 'criteria':'==',
+                                 'value':'"atp6"', 
+                                 'format': atp6})
+atp8 = workbook.add_format()
+atp8.set_bg_color('#EA7B31')
+worksheet.conditional_format('A1:V100', 
+                                {'type':'cell', 
+                                 'criteria':'==',
+                                 'value':'"atp8"', 
+                                 'format': atp8})
+atp9 = workbook.add_format()
+atp9.set_bg_color('#71DB09')
+worksheet.conditional_format('A1:V100', 
+                                {'type':'cell', 
+                                 'criteria':'==',
+                                 'value':'"atp9"', 
+                                 'format': atp9})
+
+
+### list of proteins to search for (SSU = rrnS + LSU=rrnL; nad4l/nad4L is filterd later (line 202))
+proteine=["cox1","cox2","cox3","nad1","nad4","rps3","atp6","atp8","atp9","cob","rrnS","nad6","rrnL","nad2","nad3","nad4l","nad4L","nad5"]
+
+### folder with .fas files of extracted nodes of mitochondrial genome
+data_folder = Path("path\\to\\files")
+### variable for defined genes ($proteine) in the samples 
+proteineIn = []
+### variable for the rest of output (genes, rna,..) 
+otherProteins = []
+### do while there are .txt files in the data_folder:
+print("In %s" % data_folder)
+### Start from the first cell in Excel. 
+row = 0
+col = 0
+### write in Excel sheet # first row: Headlines:
+worksheet.write(row, col, 'Sample', bold)
+col += 1
+worksheet.write(row, col, 'Proteins', bold)
+row += 1
+worksheet2.write(row, col, 'Sample', bold)
+col += 1
+worksheet2.write(row, col, 'Proteins', bold)
+row += 1
+
+### only for files named "*.txt":
+for file_to_open in glob.glob("%s\\*\\*.txt" %data_folder):
+    print("File to open: %s" % file_to_open)
+    
+    ### make and print a filename from the direcotry name
+    ### for file_to_open in glob.glob("%s\\*\\*.txt" %data_folder):
+    test = file_to_open.rsplit('\\',2)
+    print("--------------------------")
+    print("File: %s.txt" % test[1]) 
+    
+    ### print sample name in excel sheet:
+    col = 0
+    print("Next sample: %s at row %s - col %s" % (test[1], row, col))
+    worksheet.write(row, col, test[1], bold)
+    col += 1
+    
+    ### open the .txt file and read it line by line
+    f = open(file_to_open, 'r')
+    ### as long there are lines in the file
+    for lines in f:
+        ### if the line dont starts with ">" (if its not a comment line)
+        if ">" not in lines:
+            ### split the lines into words
+            words = lines.split()
+            ### print("words: %s" % words)
+            ### check for every word if it is $proteins 
+            for int in range(len(words)):
+                for i in range(len(proteine)):
+                    ### workaround for nad4l:
+                    if ("nad4l" in words[int]) or ("nad4L" in words[int]):
+                        #check if there isnt already an entry
+                        if "nad4l" not in proteineIn:
+                            proteineIn.append("nad4l")    
+                    ### all other proteins:
+                    else:
+                        if proteine[i] in words[int]:
+                            ### check if there isnt already an entry
+                            if proteine[i] not in proteineIn:
+                                proteineIn.append(proteine[i])
+            ### reorder starting with cox1:
+            neueliste = []
+            result = []
+            ### alle gefundenen proteine in eine temporäre liste schreiben, bis cox1 erreicht ist
+            for i in range(len(proteineIn)):
+                if "cox1" not in proteineIn[i]:
+                    neueliste.append(proteineIn[i])
+                else:
+                    int = i
+                    break;
+            ### ab und inkl. cox1 alles in die neue liste (result) schreiben        
+            xy = len(proteineIn)-int        
+            for x in range(xy):
+                result.append(proteineIn[int])
+                int += 1
+            ### alles vor cox1 aus der temporären liste zum schluss an die neue liste (result) anhängen    
+            for j in range(len(neueliste)):
+                result.append(neueliste[j])
+                
+            print("Found and ordered proteins: %s" %result)
+            print("--------------------------")
+            
+            ### write proteins into Excel sheet: 
+            for i in range (len(result)):
+                worksheet.write(row, col, result[i])
+                col += 1
+            row += 1
+            
+            ### which proteins are not in?
+            if proteineIn == []:
+                otherProteins = words
+            else:
+                for i in range(len(words)):
+                    tmp = 0 
+                    for j in range(len(proteineIn)):
+                        if proteineIn[j] not in words[i]:
+                            tmp += 1
+                        if tmp == len(proteineIn):
+                            otherProteins.append(words[i])
+            ### proteins that are not in the Excel list:
+            for j in range (len(otherProteins)):
+                worksheet2.write(row, col, otherProteins[j])
+                col += 1
+            row += 1
+           
+            print("other proteins: %s" %otherProteins)
+            print("--------------------------")
+            print("--------------------------")
+                    
+            ### clear the variables for the next node or line            
+            otherProteins = []
+            int = []
+            proteineIn = []  
+
+    ### close the file        
+    f.close()    
+    
+workbook.close()
