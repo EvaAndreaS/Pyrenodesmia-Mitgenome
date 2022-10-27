@@ -1,0 +1,62 @@
+## To get a fasta file for each Protein with the different sequences from all samples (from an Annotation)
+## Print all Sequences (e.g. to *MITOS\Gesamt+++.fas) 
+## to one file (e.g. AllSequences.fas)
+## Print the sequences of the proteins from all samples into one file (protein.fas)
+## and the rest to another file (e.g. Otherstuff.txt)¶
+
+import glob
+from pathlib import Path
+from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.Alphabet import IUPAC
+
+## list of 17 proteins to search for (SSU = rrnS + LSU=rrnL) - 16 are expected to be found for Teloschistaceae (all exept atp9)
+proteine=["cox1","cox2","cox3","nad1","nad4","rps3","atp6","atp8","atp9","cob","rrnS","nad6","rrnL","nad2","nad3","nad4l","nad5"]
+
+## folder with .fas files with Annotations of mitochondrial genome (e.g. from MITOS, GeSeq,...)
+#data_folder = Path("C:\\UNIX_exch\\Cerodens_Mito\\MITOS\\Gesamt\\")  
+#data_folder = Path("C:\\UBUNTU-exchange\\Cerodens-Mito\\MITOS\\Gesamt\\")
+#data_folder = Path("C:\\UBUNTU-exchange\\Cerodens-Mito\\MITOS\\RefSeq81\\")
+data_folder = Path("C:\\UNIX_exch\\Cerodens_Mito\\MITOS\\RefSeq81\\") 
+
+### DELETE THE ALLSEQUENCE.FAS FILE BEFORE DOING THIS!!!!!!!!!!!!!!!
+outfile = "%s\AllSequences.fas" %data_folder
+
+# specifie which files to read into the loop(e.g. fas or fasta files) in path data_folder:
+for file_to_open in glob.glob("%s/*.fasta" %data_folder):
+    #get the name of the .fas file
+    print("File: %s" %file_to_open)
+    test = file_to_open.rsplit('\\',1) 
+ 
+    #parse the .fas files 
+    for seq_record in SeqIO.parse(file_to_open, 'fasta'):
+        #check if the proteins are present in the .fas files 
+        zaehler = 0
+        for it in range(len(proteine)):
+            if proteine[it] in str(seq_record.description.split()[3]):   
+                
+                #write the protein sequences into a .fas file (proteine) in Directory \Proteine, where all sequences for that protein are stored
+                filename = "%s\Proteine\%s.fas" %(data_folder, proteine[it])
+                p = open(filename, "a")
+                p.write(str(">%s; %s; %s %s %s" %(test[1], seq_record.description.split()[0], seq_record.description.split()[1], seq_record.description.split()[2],seq_record.description.split()[3])))  
+                p.write("\n%s\n" %str(seq_record.seq))
+                p.close()
+                zaehler -= 1
+        #if the proteins ($proteine) are not in the reads, write them into OtherStuff.txt
+            elif proteine[it] not in str(seq_record.description.split()[3]):
+                zaehler += 1
+                if zaehler == len(proteine):
+                    filename = "%s\Proteine\OtherStuff.txt" %data_folder
+                    s = open(filename, "a")
+                    s.write(str("%s: %s\n" %(test[1], seq_record.description.split()[3])))  
+                    tmp = str(seq_record.description.split()[3])
+                    s.write(str(">%s; %s; %s %s %s" %(test[1], seq_record.description.split()[0], seq_record.description.split()[1], seq_record.description.split()[2],seq_record.description.split()[3])))  
+                    s.write("\n%s\n" %str(seq_record.seq))
+                    s.close()
+                    zaehler = 0
+        #write all sequences in all ....fas-files into the  big .fas-file (AllSequenes.fas)
+        f = open(outfile, "a")
+        f.write(str(">%s; %s; %s %s %s" %(test[1], seq_record.description.split()[0], seq_record.description.split()[1], seq_record.description.split()[2],seq_record.description.split()[3])))  
+        f.write("\n%s\n" %str(seq_record.seq))
+        f.close()
+
