@@ -6,23 +6,35 @@ cat file.fasta | grep "^>NODE_" | sed 's/_/ /g' | awk '{if($4>500)print $5,$6,$1
 cat file.fasta | grep "^>NODE_417_" -A 1 >> 1_scaffolds.fasta
 #########################################################################################################################################################################
 
-#########################################################################################################################################################################
+#######################################################################################################################################################################
 ##### Blast mt-genomes against a reference genome: #####
 ##### 1) Make a database using the reference genome: #####
 sudo makeblastdb -in reference_mt-genome.fasta -parse_seqids -taxid_map taxdb.btd -dbtype 'nucl' -out reference_DB
 ##### 2) Performe a discontiguous megablast of nucleotide queries in a loop (1-100) against a nucleotide reference database, outformat is tabular with comments: #####
 for num in {1..100}; do blastn -db reference_DB -query ”$num”_scaffolds.fasta -out "$num"_results.out -num_threads 12 -outfmt 7 -task dc-megablast;done
-#########################################################################################################################################################################
+#######################################################################################################################################################################
 
-#########################################################################################################################################################################
+#######################################################################################################################################################################
 ##### Convert the resulting NODES from the BLASTn (…_results.out) and save it in textformat (…_results.txt) #####
 for num in {1..100}; do touch "$num"_results.txt; cat "$num"_results.out | grep "^NODE_" | sort -k 1.6,1.12 -g > "$num"_results.txt; done
 
-#########################################################################################################################################################################
+#######################################################################################################################################################################
 ##### Make graphs in R to see what is mitochondrial genome with the whole sequences and the BLASTed stuff --> .... #####
 
-#########################################################################################################################################################################
-##### BLAST the resulting .fasta files against nt on acharius #####
+#######################################################################################################################################################################
+##### BLASTn (megablast) the .fasta-files against nt, output as text-file (tabular with comment lines) #####
+blastn -db /path/to/db/nt -query /path/to/files/*.fasta -out /path/to/results/folder/*_results.txt -outfmt 7 -task dc-megablast
 
+#######################################################################################################################################################################
+##### Create a multiple sequence alignment using MAFFT (Multiple alignment program for amino acid or nucleotide sequences) for all .fas-files in current directory ###
+for filename in *.fas;do mafft --auto $filename > $filename.maf;done
+
+#######################################################################################################################################################################
+##### Automated alignment trimming using trimAL with a heuristic selection of the automatic method based on similarity statistics (optimized for Maximum Likelihood phylogenetic tree reconstruction) ####
+for filename in /path/to/msa-output/*.maf; do trimal \
+-in ${filename} \
+-out ${filename}-trimal.fas \
+-automated1 \
+-fasta; done
 
 
